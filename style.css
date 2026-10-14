@@ -15,6 +15,28 @@
 @media (max-width: 560px) { .ask-card fieldset.chi-set { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ask-card fieldset.chi-set > :not(.opt.chi) { grid-column: 1 / -1; }
 .ask-card fieldset.chi-set > .opt.chi { margin: 0; }
+/* сетка с галочками: картинки из текста вопроса, отметить сколько угодно */
+.ask-card .chi-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 4px 0;
+  font-size: 13px; color: var(--muted-foreground, #71717a); background: var(--card, #fff); }
+.ask-card .chi-bar .chi-all { padding: 2px 10px; font-size: 13px; }
+.ask-card .chi-gal { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+@media (max-width: 560px) { .ask-card .chi-gal { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ask-card .chi-tile { position: relative; display: block; border-radius: 10px; overflow: hidden; cursor: pointer;
+  background: var(--surface-2, #f4f4f5); outline: 2px solid transparent; outline-offset: -2px;
+  transition: outline-color 120ms ease; }
+.ask-card .chi-tile img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.ask-card .chi-tile.chi-broken img { visibility: hidden; }
+.ask-card .chi-tile input { position: absolute; top: 8px; left: 8px; width: 20px; height: 20px; margin: 0;
+  accent-color: var(--primary, #18181b); cursor: pointer; }
+.ask-card .chi-tile:has(input:checked) { outline-color: var(--primary, #18181b); outline-width: 3px; outline-offset: -3px; }
+.ask-card .chi-tile:has(input:focus-visible) { box-shadow: 0 0 0 2px var(--ring, #a1a1aa); }
+.ask-card .chi-cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 5px; font-size: 12px; line-height: 1.2;
+  color: #fff; background: linear-gradient(transparent, rgb(0 0 0 / 0.55)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ask-card .chi-zoom { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px;
+  padding: 0; border: 0; border-radius: 8px; color: #fff; background: rgb(0 0 0 / 0.45); cursor: zoom-in;
+  opacity: 0; transition: opacity 120ms ease; }
+.ask-card .chi-tile:hover .chi-zoom, .ask-card .chi-zoom:focus-visible { opacity: 1; }
+@media (hover: none) { .ask-card .chi-zoom { opacity: 1; } }
 /* своё окно, когда окна хаба нет */
 .chi-popup { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: auto;
   background: rgb(0 0 0 / 0.8); }

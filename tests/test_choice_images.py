@@ -42,6 +42,19 @@ class Source(unittest.TestCase):
         self.assertEqual(re.findall(pat.replace("\\/", "/"), text, re.I),
                          ["/Users/me/Work/!!! 2M DESIGN/Generated styles/MJ/error-MJ-2-grid-1.png"])
 
+    def test_gallery(self):
+        # владелец 14.10: «хоть 50 картинок, выбрать хоть 1, хоть все» — у формы Claude Code не больше 4 вариантов, поэтому
+        # картинки списком в тексте вопроса с несколькими ответами; отмеченные уходят ответом через input[name=qN] карточки
+        js = read("main.js")
+        self.assertIn('fs.querySelector("input[type=checkbox]")', js)   # только multiSelect
+        self.assertIn("mark.name = box.name", js)                      # ответ собирает карточка хаба
+        self.assertIn("mark.value = label", js)
+        self.assertIn('":is(.chi-pics, .chi-gal) img"', js)           # зум листает и сетку
+        self.assertIn("Отметить все", js)
+        css = read("style.css")
+        self.assertIn(".chi-gal { display: grid; grid-template-columns: repeat(4", css)
+        self.assertIn(".chi-tile:has(input:checked)", css)
+
     def test_css(self):
         css = read("style.css")
         self.assertIn("fieldset.chi-set", css)        # с картинками — сеткой рядом
