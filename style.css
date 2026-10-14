@@ -10,8 +10,9 @@
 /* путь к картинке, которая показана, в подписи не нужен */
 .ask-card .opt.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
 .ask-card .opt.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])) { display: none; }
-/* варианты с картинками — сеткой рядом, чтобы сравнивать; без картинки («ничего не подходит») — на всю ширину */
-.ask-card fieldset.chi-set { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+/* варианты с картинками — по 4 в ряд, как сетка Midjourney; без картинки («ничего не подходит») — на всю ширину */
+.ask-card fieldset.chi-set { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 560px) { .ask-card fieldset.chi-set { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ask-card fieldset.chi-set > :not(.opt.chi) { grid-column: 1 / -1; }
 .ask-card fieldset.chi-set > .opt.chi { margin: 0; }
 /* своё окно, когда окна хаба нет */
