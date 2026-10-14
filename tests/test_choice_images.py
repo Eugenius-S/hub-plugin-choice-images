@@ -28,7 +28,7 @@ class Source(unittest.TestCase):
         js = read("main.js")
         self.assertIn('".ask-card label.opt"', js)
         self.assertIn('import("/static/js/lightbox.js")', js)      # окно хаба — его зум и зум «Картинок в чате»
-        self.assertIn("core.openLightbox(all, all.indexOf(img))", js)
+        self.assertIn("core.openLightbox(list, all.indexOf(img))", js)
         self.assertIn("popup(img)", js)                              # окна хаба нет — своё
         click = js[js.index('img.addEventListener("click"'):]
         self.assertLess(click.index("e.preventDefault()"), click.index("open(img)"))   # клик по картинке — не выбор
@@ -49,7 +49,11 @@ class Source(unittest.TestCase):
         self.assertIn('fs.querySelector("input[type=checkbox]")', js)   # только multiSelect
         self.assertIn("mark.name = box.name", js)                      # ответ собирает карточка хаба
         self.assertIn("mark.value = label", js)
-        self.assertIn('":is(.chi-pics, .chi-gal) img"', js)           # зум листает и сетку
+        self.assertIn('":is(.chi-pics, .chi-gal) .chi-img"', js)      # зум листает и сетку
+        # 14.10 d117344: 60 сеток 2048 px повесили Mac — превью холстом TILE px, по AT_ONCE, когда плитка у экрана
+        self.assertIn("const TILE = 400, AT_ONCE = 2;", js)
+        self.assertIn("IntersectionObserver", js)
+        self.assertIn('im.src = "";', js)
         self.assertIn("Отметить все", js)
         css = read("style.css")
         self.assertIn(".chi-gal { display: grid; grid-template-columns: repeat(4", css)

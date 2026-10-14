@@ -1,12 +1,12 @@
 /* Картинки в вариантах ответа */
 .ask-card .opt.chi .chi-pics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.ask-card .opt.chi .chi-pics img {
+.ask-card .opt.chi .chi-pics .chi-img {
   display: block; width: 100%; max-width: 320px; aspect-ratio: 1; object-fit: contain;
   border-radius: 10px; background: var(--surface-2, #f4f4f5); cursor: zoom-in;
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-.ask-card .opt.chi .chi-pics img:hover { transform: scale(1.02); }
-.ask-card .opt.chi .chi-pics:has(img + img) img { width: calc(50% - 4px); }
+.ask-card .opt.chi .chi-pics .chi-img:hover { transform: scale(1.02); }
+.ask-card .opt.chi .chi-pics:has(.chi-img + .chi-img) .chi-img { width: calc(50% - 4px); }
 /* путь к картинке, которая показана, в подписи не нужен */
 .ask-card .opt.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
 .ask-card .opt.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])) { display: none; }
@@ -24,8 +24,8 @@
 .ask-card .chi-tile { position: relative; display: block; border-radius: 10px; overflow: hidden; cursor: pointer;
   background: var(--surface-2, #f4f4f5); outline: 2px solid transparent; outline-offset: -2px;
   transition: outline-color 120ms ease; }
-.ask-card .chi-tile img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
-.ask-card .chi-tile.chi-broken img { visibility: hidden; }
+.ask-card .chi-tile .chi-img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+.ask-card .chi-tile.chi-broken .chi-img { visibility: hidden; }
 .ask-card .chi-tile input { position: absolute; top: 8px; left: 8px; width: 20px; height: 20px; margin: 0;
   accent-color: var(--primary, #18181b); cursor: pointer; }
 .ask-card .chi-tile:has(input:checked) { outline-color: var(--primary, #18181b); outline-width: 3px; outline-offset: -3px; }

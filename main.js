@@ -27,18 +27,73 @@ function src(path, raw) {
   return `${location.protocol}//${location.hostname}:${port}/raw?path=${encodeURIComponent(path)}`;
 }
 
-// ядро отдаёт только показанные сессией файлы, «Файлы» — папки проектов: не вышло у одного — второй
-function image(path, failed) {
-  const img = document.createElement("img");
-  img.alt = path.split("/").pop();
-  img.dataset.path = path;
-  img.loading = "lazy";
-  img.src = src(path, false);
-  img.addEventListener("error", () => {
-    if (!img.dataset.raw) { img.dataset.raw = "1"; img.src = src(path, true); return; }
-    failed(img);
+// Превью, не сами картинки: сетка MJ — 2048 px, 60 таких на странице — гигабайты памяти, страница и Mac повисли
+// (владелец 14.10, d117344). Картинка грузится вне страницы по AT_ONCE штук, когда плитка близко к экрану, ужимается
+// в холст TILE px, большая отпускается; одна на путь — пересобранная карточка не грузит снова. Крупно — по клику.
+// Адрес: ядро отдаёт только показанные сессией файлы, «Файлы» — папки проектов: не вышло у одного — второй
+const TILE = 400, AT_ONCE = 2;
+const small = new Map(), full = new Map();   // путь → Promise<холст | null>; путь → адрес, с которого загрузилась
+const waiting = [];
+let busy = 0;
+function next() {
+  while (busy < AT_ONCE && waiting.length) {
+    busy++;
+    waiting.shift()().finally(() => { busy--; next(); });
+  }
+}
+function load(url) {
+  return new Promise((ok, no) => {
+    const im = new Image();
+    im.decoding = "async";
+    im.onload = () => im.decode().then(() => ok(im), () => ok(im));
+    im.onerror = no;
+    im.src = url;
   });
-  return img;
+}
+export function shrink(path) {
+  if (!small.has(path)) small.set(path, new Promise((done) => {
+    waiting.push(async () => {
+      for (const raw of [false, true]) {
+        try {
+          const im = await load(src(path, raw)), k = Math.min(1, TILE / Math.max(im.naturalWidth, im.naturalHeight, 1));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(im.naturalWidth * k));
+          c.height = Math.max(1, Math.round(im.naturalHeight * k));
+          c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+          im.src = "";
+          full.set(path, src(path, raw));
+          return done(c);
+        } catch { /* следующий адрес */ }
+      }
+      done(null);
+    });
+    next();
+  }));
+  return small.get(path);
+}
+// плитка — холст; рисуется, когда подошла к экрану
+const near = typeof IntersectionObserver === "function" ? new IntersectionObserver((list) => {
+  for (const e of list) if (e.isIntersecting) { near.unobserve(e.target); paint(e.target); }
+}, { rootMargin: "600px" }) : null;
+function paint(c) {
+  shrink(c.dataset.chi).then((s) => {
+    if (!s) return c.dispatchEvent(new Event("chi-failed"));
+    c.width = s.width;
+    c.height = s.height;
+    c.getContext("2d").drawImage(s, 0, 0);
+    c.classList.add("chi-ready");
+  });
+}
+function image(path, failed) {
+  const c = document.createElement("canvas");
+  c.className = "chi-img";
+  c.width = c.height = 1;
+  c.dataset.chi = path;   // не data-path: им ядро размечает ссылки, а стиль прячет показанный путь
+  c.setAttribute("role", "img");
+  c.setAttribute("aria-label", path.split("/").pop());
+  c.addEventListener("chi-failed", () => failed(c));
+  if (near) near.observe(c); else paint(c);
+  return c;
 }
 
 function picture(path) {
@@ -47,7 +102,7 @@ function picture(path) {
     img.remove();
     if (box && !box.children.length) { box.remove(); opt?.classList.remove("chi"); }
   });
-  img.title = `${img.alt} — открыть крупно`;
+  img.title = `${path.split("/").pop()} — открыть крупно`;
   img.addEventListener("click", (e) => {   // по картинке — крупно, а не выбор варианта (и не ответ у карточки в одно касание)
     e.preventDefault();
     e.stopPropagation();
@@ -151,14 +206,16 @@ export function scan(root) {
   }
 }
 
+// крупно — сама картинка, не превью; окну хаба — список адресов всех картинок вопроса
 function open(img) {
-  const all = [...(img.closest("fieldset") || img.closest(".ask-card")).querySelectorAll(":is(.chi-pics, .chi-gal) img")];
-  if (core?.openLightbox) return core.openLightbox(all, all.indexOf(img));
-  popup(img);
+  const all = [...(img.closest("fieldset") || img.closest(".ask-card")).querySelectorAll(":is(.chi-pics, .chi-gal) .chi-img")];
+  const list = all.map((c) => { const u = full.get(c.dataset.chi) || src(c.dataset.chi, false); return { src: u, currentSrc: u, alt: c.dataset.chi.split("/").pop() }; });
+  if (core?.openLightbox) return core.openLightbox(list, all.indexOf(img));
+  popup(list[all.indexOf(img)]);
 }
 
 // своё окно — если окна хаба нет: крупно, клик по картинке — в натуральную величину, мимо или Esc — закрыть
-function popup(img) {
+function popup(img) {   // img — {src, alt}
   const box = document.createElement("div"), big = document.createElement("img");
   box.className = "chi-popup";
   big.src = img.currentSrc || img.src;
