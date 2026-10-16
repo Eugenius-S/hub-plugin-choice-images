@@ -58,13 +58,23 @@ class Source(unittest.TestCase):
         self.assertIn("mark.value = label", js)
         self.assertIn('":is(.chi-pics, .chi-gal) .chi-img"', js)      # зум листает и сетку
         # 14.10 d117344: 60 сеток 2048 px повесили Mac — превью холстом TILE px, по AT_ONCE, когда плитка у экрана
-        self.assertIn("const TILE = 400, AT_ONCE = 2;", js)
+        self.assertIn("const TILE = 400, AT_ONCE = 2, KEEP = 120;", js)
         self.assertIn("IntersectionObserver", js)
         self.assertIn('im.src = "";', js)
         self.assertIn("Отметить все", js)
         css = read("style.css")
         self.assertIn(".chi-gal { display: grid; grid-template-columns: repeat(4", css)
         self.assertIn(".chi-tile:has(input:checked)", css)
+
+    def test_a_new_card_loads_the_file_again(self):
+        # 16.10 (gen-frutiger-aero, q184511): кадр заменили по тому же пути, а новая карточка показала прежний из памяти
+        # страницы — владелец 4 раза «абсолютно то же самое». Превью — на вопрос и путь, не на путь
+        js = read("main.js")
+        self.assertIn("export function shrink(path, ask = \"\")", js)
+        self.assertIn('const key = ask + "\\n" + path;', js)
+        self.assertIn('shrink(c.dataset.chi, c.closest("[data-ask]")?.dataset.ask)', js)
+        self.assertNotIn("small.set(path,", js)
+        self.assertIn("load(src(path, raw, ask))", js)               # и адрес другой: память документа браузера
 
     def test_css(self):
         css = read("style.css")

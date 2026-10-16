@@ -22,18 +22,20 @@ export function pathsOf(opt) {
 
 const stem = (p) => p.split("/").pop().replace(/\.[^.]+$/, "");
 
-function src(path, raw) {
-  if (!raw) return "/api/file?path=" + encodeURIComponent(path);
+// v — вопрос: другой адрес для новой карточки, иначе браузер берёт картинку из памяти документа по тому же адресу
+function src(path, raw, v = "") {
+  const tail = v ? "&v=" + encodeURIComponent(v) : "";
+  if (!raw) return "/api/file?path=" + encodeURIComponent(path) + tail;
   const port = hub?.snapshot()?.files_port || 8788;
-  return `${location.protocol}//${location.hostname}:${port}/raw?path=${encodeURIComponent(path)}`;
+  return `${location.protocol}//${location.hostname}:${port}/raw?path=${encodeURIComponent(path)}${tail}`;
 }
 
 // Превью, не сами картинки: сетка MJ — 2048 px, 60 таких на странице — гигабайты памяти, страница и Mac повисли
 // (владелец 14.10, d117344). Картинка грузится вне страницы по AT_ONCE штук, когда плитка близко к экрану, ужимается
 // в холст TILE px, большая отпускается; одна на путь — пересобранная карточка не грузит снова. Крупно — по клику.
 // Адрес: ядро отдаёт только показанные сессией файлы, «Файлы» — папки проектов: не вышло у одного — второй
-const TILE = 400, AT_ONCE = 2;
-const small = new Map(), full = new Map();   // путь → Promise<холст | null>; путь → адрес, с которого загрузилась
+const TILE = 400, AT_ONCE = 2, KEEP = 120;   // KEEP — превью в памяти (холст 400 px ≈ 0,6 МБ)
+const small = new Map(), full = new Map();   // вопрос+путь → Promise<холст | null>; вопрос+путь → адрес, с которого загрузилась
 const waiting = [];
 let busy = 0;
 function next() {
@@ -51,18 +53,22 @@ function load(url) {
     im.src = url;
   });
 }
-export function shrink(path) {
-  if (!small.has(path)) small.set(path, new Promise((done) => {
+// Превью — на вопрос и путь: новая карточка грузит файл заново — его могли заменить по тому же пути (16.10 q184511:
+// новый кадр, а карточка показала прежний из памяти страницы); перерисовка той же карточки — из памяти
+export function shrink(path, ask = "") {
+  const key = ask + "\n" + path;
+  if (!small.has(key) && small.size >= KEEP) { const old = small.keys().next().value; small.delete(old); full.delete(old); }   // старейшее — карточки дня копятся
+  if (!small.has(key)) small.set(key, new Promise((done) => {
     waiting.push(async () => {
       for (const raw of [false, true]) {
         try {
-          const im = await load(src(path, raw)), k = Math.min(1, TILE / Math.max(im.naturalWidth, im.naturalHeight, 1));
+          const im = await load(src(path, raw, ask)), k = Math.min(1, TILE / Math.max(im.naturalWidth, im.naturalHeight, 1));
           const c = document.createElement("canvas");
           c.width = Math.max(1, Math.round(im.naturalWidth * k));
           c.height = Math.max(1, Math.round(im.naturalHeight * k));
           c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
           im.src = "";
-          full.set(path, src(path, raw));
+          full.set(key, src(path, raw, ask));
           return done(c);
         } catch { /* следующий адрес */ }
       }
@@ -70,14 +76,14 @@ export function shrink(path) {
     });
     next();
   }));
-  return small.get(path);
+  return small.get(key);
 }
 // плитка — холст; рисуется, когда подошла к экрану
 const near = typeof IntersectionObserver === "function" ? new IntersectionObserver((list) => {
   for (const e of list) if (e.isIntersecting) { near.unobserve(e.target); paint(e.target); }
 }, { rootMargin: "600px" }) : null;
 function paint(c) {
-  shrink(c.dataset.chi).then((s) => {
+  shrink(c.dataset.chi, c.closest("[data-ask]")?.dataset.ask).then((s) => {
     if (!s) return c.dispatchEvent(new Event("chi-failed"));
     c.width = s.width;
     c.height = s.height;
@@ -228,7 +234,7 @@ export function scan(root) {
 // крупно — сама картинка, не превью; окну хаба — список адресов всех картинок вопроса
 function open(img) {
   const all = [...(img.closest("fieldset") || img.closest(".ask-card")).querySelectorAll(":is(.chi-pics, .chi-gal) .chi-img")];
-  const list = all.map((c) => { const u = full.get(c.dataset.chi) || src(c.dataset.chi, false); return { src: u, currentSrc: u, alt: c.dataset.chi.split("/").pop() }; });
+  const list = all.map((c) => { const ask = c.closest("[data-ask]")?.dataset.ask || "", u = full.get(ask + "\n" + c.dataset.chi) || src(c.dataset.chi, false, ask); return { src: u, currentSrc: u, alt: c.dataset.chi.split("/").pop() }; });
   if (core?.openLightbox) return core.openLightbox(list, all.indexOf(img));
   popup(list[all.indexOf(img)]);
 }
