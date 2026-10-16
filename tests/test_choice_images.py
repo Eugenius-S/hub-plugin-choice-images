@@ -35,6 +35,13 @@ class Source(unittest.TestCase):
         self.assertIn('"/api/file?path="', js)
         self.assertIn("/raw?path=", js)                               # не отдало ядро — «Файлы»
 
+    def test_picture_in_question_text(self):
+        # владелец 16.10: путь к картинке в тексте вопроса — миниатюра в карточке, не ссылка
+        js, css = read("main.js"), read("style.css")
+        self.assertIn("if (!fs.dataset[DONE]) inQuestion(fs);", js)   # сетка не взяла — миниатюрой под текстом
+        self.assertIn('box.className = "chi-pics chi-q"', js)
+        self.assertIn(".ask-card legend.chi :is([data-path$=\".png\" i]", css)   # путь показанной картинки скрыт
+
     def test_path_in_text(self):
         # путь в тексте подписи, и с пробелами в папках — как у владельца
         pat = re.search(r"const PATH = /(.+)/gi;", read("main.js")).group(1).replace("(?<![\\w.])", "")

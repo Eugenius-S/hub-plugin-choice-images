@@ -7,7 +7,13 @@
 }
 .ask-card .opt.chi .chi-pics .chi-img:hover { transform: scale(1.02); }
 .ask-card .opt.chi .chi-pics:has(.chi-img + .chi-img) .chi-img { width: calc(50% - 4px); }
+/* картинка в тексте вопроса — миниатюрой под ним */
+.ask-card legend.chi .chi-q { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ask-card legend.chi .chi-q .chi-img { display: block; width: 100%; max-width: 240px; aspect-ratio: 1; object-fit: contain;
+  border-radius: 10px; background: var(--surface-2, #f4f4f5); cursor: zoom-in; }
 /* путь к картинке, которая показана, в подписи не нужен */
+.ask-card legend.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
+.ask-card legend.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])),
 .ask-card .opt.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
 .ask-card .opt.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])) { display: none; }
 /* варианты с картинками — по 4 в ряд, как сетка Midjourney; без картинки («ничего не подходит») — на всю ширину */

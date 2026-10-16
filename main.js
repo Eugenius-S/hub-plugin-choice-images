@@ -1,6 +1,7 @@
 // Картинки в вариантах ответа: вариант карточки вопроса, в подписи которого путь к картинке, показывает её саму.
 // Клик по картинке — окно хаба крупно (картинки всех вариантов вопроса, листаются; зум — его и плагина «Картинки в
 // чате», если стоит), вариант при этом не выбирается. Окна хаба нет — своё простое окно.
+// Картинка в тексте вопроса (не сеткой) — миниатюрой под ним.
 // Вопрос с несколькими ответами (multiSelect), в тексте которого списком пути к картинкам, — сетка с галочками: сколько
 // угодно картинок, отметить любое число; в ответ уходят подписи отмеченных (владелец 14.10: «хоть 50, выбрать хоть 1,
 // хоть все»). У формы Claude Code не больше 4 вариантов — картинки идут в тексте вопроса, не вариантами.
@@ -98,7 +99,7 @@ function image(path, failed) {
 
 function picture(path) {
   const img = image(path, (img) => {
-    const box = img.parentElement, opt = img.closest(".opt");
+    const box = img.parentElement, opt = img.closest(".opt, legend");
     img.remove();
     if (box && !box.children.length) { box.remove(); opt?.classList.remove("chi"); }
   });
@@ -190,8 +191,26 @@ function gallery(fs) {
   return true;
 }
 
+// картинка в тексте вопроса, не сеткой (одна, или вопрос с одним ответом) — миниатюрой под текстом, путь не нужен
+// (владелец 16.10: «Что не так с Shield-check? /…/shield-check.png» — ссылка вместо картинки)
+function inQuestion(fs) {
+  const legend = fs.querySelector(":scope > legend");
+  if (!legend || legend.dataset[DONE]) return;
+  const paths = pathsOf(legend);
+  if (!paths.length) return;
+  legend.dataset[DONE] = "1";
+  const box = document.createElement("span");
+  box.className = "chi-pics chi-q";
+  for (const p of paths) box.append(picture(p));
+  legend.append(box);
+  legend.classList.add("chi");
+}
+
 export function scan(root) {
-  for (const fs of root.querySelectorAll?.(".ask-card fieldset") || []) if (!fs.dataset[DONE]) gallery(fs);
+  for (const fs of root.querySelectorAll?.(".ask-card fieldset") || []) {
+    if (!fs.dataset[DONE]) gallery(fs);
+    if (!fs.dataset[DONE]) inQuestion(fs);
+  }
   for (const opt of root.querySelectorAll?.(".ask-card label.opt") || []) {
     if (opt.dataset[DONE]) continue;
     const paths = pathsOf(opt);
