@@ -1,9 +1,15 @@
 {
   "name": "choice-images",
   "icon": "icon.png",
-  "description": "Если в вопросе нужно выбрать картинку, она видна прямо в варианте ответа; много картинок — сеткой с галочками, отметить сколько угодно. Клик открывает крупно, с зумом",
-  "why": "Выбор между картинками — глазами, без открытия файлов по ссылкам",
-  "version": "0.2.3",
+  "description": "When a question asks to pick an image, it shows right in the answer option; many images come as a grid with checkboxes, tick as many as you like. A click opens it large, with zoom",
+  "why": "Choosing between images by eye, without opening files by links",
+  "i18n": {
+    "ru": {
+      "description": "Если в вопросе нужно выбрать картинку, она видна прямо в варианте ответа; много картинок — сеткой с галочками, отметить сколько угодно. Клик открывает крупно, с зумом",
+      "why": "Выбор между картинками — глазами, без открытия файлов по ссылкам"
+    }
+  },
+  "version": "0.3.0",
   "hub": "^1.10",
   "web": "main.js"
 }

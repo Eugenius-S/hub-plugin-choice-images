@@ -1,17 +1,43 @@
-// Картинки в вариантах ответа: вариант карточки вопроса, в подписи которого путь к картинке, показывает её саму.
-// Клик по картинке — окно хаба крупно (картинки всех вариантов вопроса, листаются; зум — его и плагина «Картинки в
-// чате», если стоит), вариант при этом не выбирается. Окна хаба нет — своё простое окно.
-// Картинка в тексте вопроса (не сеткой) — миниатюрой под ним.
-// Вопрос с несколькими ответами (multiSelect), в тексте которого списком пути к картинкам, — сетка с галочками: сколько
-// угодно картинок, отметить любое число; в ответ уходят подписи отмеченных. У формы Claude Code не больше 4 вариантов — картинки идут в тексте вопроса, не вариантами.
+// Images in answer options: an option of a question card whose label contains an image path shows the image itself.
+// A click on the image opens it large in the hub window (the images of all the question's options, paged; zoom is the
+// hub's and the "chat-images" plugin's, if installed); the option is not selected by that click. If there is no hub
+// window, a simple window of our own.
+// An image in the question text (not a grid) is shown as a thumbnail below it.
+// A question with several answers (multiSelect) whose text lists image paths gets a grid with checkboxes: any number of
+// images, tick any number of them; the labels of the ticked ones go into the answer. The Claude Code form has at most
+// 4 options, so the images go in the question text, not as options.
 const IMAGE = /\.(png|jpe?g|gif|webp)$/i;
-const PATH = /(\/[^\n`"'<>|]*?\.(?:png|jpe?g|gif|webp))(?![\w.])/gi;   // путь в тексте подписи, и с пробелами
+const PATH = /(\/[^\n`"'<>|]*?\.(?:png|jpe?g|gif|webp))(?![\w.])/gi;   // a path in the label text, also with spaces
 const DONE = "chiDone";
 const LOUPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" '
   + 'stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg>';
-let hub = null, core = null;
 
-// картинки варианта: пути ссылок ядра (data-path) или, если ядро их не разметило, пути из текста
+// Interface strings: English by default, Russian when the hub language is Russian; any other language falls back to
+// English. The language is read at the moment of use (hub.lang), not at module load.
+const STR = {
+  en: {
+    open: "Open full size",
+    openNamed: "{name} — open full size",
+    openLabeled: "{label} — open full size",
+    mark: "{label} — select",
+    all: "Select all",
+    none: "Clear",
+    count: "Selected {n} of {m}",
+  },
+  ru: {
+    open: "Открыть крупно",
+    openNamed: "{name} — открыть крупно",
+    openLabeled: "{label} — открыть крупно",
+    mark: "{label} — отметить",
+    all: "Отметить все",
+    none: "Снять",
+    count: "Отмечено {n} из {m}",
+  },
+};
+let hub = null, core = null;
+const t = (k, v) => (((STR[hub?.lang] ?? STR.en)[k] ?? STR.en[k]) || k).replace(/\{(\w+)\}/g, (m, n) => v?.[n] ?? m);
+
+// images of an option: the core's link paths (data-path) or, if the core did not mark them up, the paths from the text
 export function pathsOf(opt) {
   const found = [];
   for (const n of opt.querySelectorAll("[data-path]")) if (IMAGE.test(n.dataset.path) && n.dataset.path.startsWith("/")) found.push(n.dataset.path);
@@ -21,7 +47,7 @@ export function pathsOf(opt) {
 
 const stem = (p) => p.split("/").pop().replace(/\.[^.]+$/, "");
 
-// v — вопрос: другой адрес для новой карточки, иначе браузер берёт картинку из памяти документа по тому же адресу
+// v is the question: a different address for a new card, otherwise the browser takes the image from the document's memory by the same address
 function src(path, raw, v = "") {
   const tail = v ? "&v=" + encodeURIComponent(v) : "";
   if (!raw) return "/api/file?path=" + encodeURIComponent(path) + tail;
@@ -29,12 +55,12 @@ function src(path, raw, v = "") {
   return `${location.protocol}//${location.hostname}:${port}/raw?path=${encodeURIComponent(path)}${tail}`;
 }
 
-// Превью, не сами картинки: сетка MJ — 2048 px, 60 таких на странице — гигабайты памяти, страница и Mac повисли
-// Картинка грузится вне страницы по AT_ONCE штук, когда плитка близко к экрану, ужимается
-// в холст TILE px, большая отпускается; одна на путь — пересобранная карточка не грузит снова. Крупно — по клику.
-// Адрес: ядро отдаёт только показанные сессией файлы, «Файлы» — папки проектов: не вышло у одного — второй
-const TILE = 400, AT_ONCE = 2, KEEP = 120;   // KEEP — превью в памяти (холст 400 px ≈ 0,6 МБ)
-const small = new Map(), full = new Map();   // вопрос+путь → Promise<холст | null>; вопрос+путь → адрес, с которого загрузилась
+// Previews, not the images themselves: an MJ grid is 2048 px, 60 of those on a page is gigabytes of memory, the page and
+// the Mac hung. The image loads off-page AT_ONCE at a time, when the tile is close to the screen, is shrunk into a
+// TILE px canvas, and the big one is released; one per path, so a rebuilt card does not load again. Large view is on click.
+// Address: the core serves only the files the session showed, "Files" serves project folders: if one fails, try the other
+const TILE = 400, AT_ONCE = 2, KEEP = 120;   // KEEP is the number of previews in memory (a 400 px canvas is about 0.6 MB)
+const small = new Map(), full = new Map();   // question+path -> Promise<canvas | null>; question+path -> the address it was loaded from
 const waiting = [];
 let busy = 0;
 function next() {
@@ -52,11 +78,11 @@ function load(url) {
     im.src = url;
   });
 }
-// Превью — на вопрос и путь: новая карточка грузит файл заново — его могли заменить по тому же пути (16.10:
-// новый кадр, а карточка показала прежний из памяти страницы); перерисовка той же карточки — из памяти
+// A preview is per question and path: a new card loads the file again, since it may have been replaced at the same path
+// (16.10: a new frame, but the card showed the old one from page memory); redrawing the same card uses memory
 export function shrink(path, ask = "") {
   const key = ask + "\n" + path;
-  if (!small.has(key) && small.size >= KEEP) { const old = small.keys().next().value; small.delete(old); full.delete(old); }   // старейшее — карточки дня копятся
+  if (!small.has(key) && small.size >= KEEP) { const old = small.keys().next().value; small.delete(old); full.delete(old); }   // the oldest goes: a day's cards pile up
   if (!small.has(key)) small.set(key, new Promise((done) => {
     waiting.push(async () => {
       for (const raw of [false, true]) {
@@ -69,7 +95,7 @@ export function shrink(path, ask = "") {
           im.src = "";
           full.set(key, src(path, raw, ask));
           return done(c);
-        } catch { /* следующий адрес */ }
+        } catch { /* next address */ }
       }
       done(null);
     });
@@ -77,7 +103,7 @@ export function shrink(path, ask = "") {
   }));
   return small.get(key);
 }
-// плитка — холст; рисуется, когда подошла к экрану
+// a tile is a canvas; it is painted when it gets close to the screen
 const near = typeof IntersectionObserver === "function" ? new IntersectionObserver((list) => {
   for (const e of list) if (e.isIntersecting) { near.unobserve(e.target); paint(e.target); }
 }, { rootMargin: "600px" }) : null;
@@ -94,7 +120,7 @@ function image(path, failed) {
   const c = document.createElement("canvas");
   c.className = "chi-img";
   c.width = c.height = 1;
-  c.dataset.chi = path;   // не data-path: им ядро размечает ссылки, а стиль прячет показанный путь
+  c.dataset.chi = path;   // not data-path: the core marks up links with it, and the style hides a shown path
   c.setAttribute("role", "img");
   c.setAttribute("aria-label", path.split("/").pop());
   c.addEventListener("chi-failed", () => failed(c));
@@ -108,8 +134,8 @@ function picture(path) {
     img.remove();
     if (box && !box.children.length) { box.remove(); opt?.classList.remove("chi"); }
   });
-  img.title = `${path.split("/").pop()} — открыть крупно`;
-  img.addEventListener("click", (e) => {   // по картинке — крупно, а не выбор варианта (и не ответ у карточки в одно касание)
+  img.title = t("openNamed", { name: path.split("/").pop() });
+  img.addEventListener("click", (e) => {   // a click on the image opens it large, not an option choice (nor an answer for a one-tap card)
     e.preventDefault();
     e.stopPropagation();
     open(img);
@@ -117,8 +143,8 @@ function picture(path) {
   return img;
 }
 
-// пункты сетки из текста вопроса: пункт списка (или абзац) с одной картинкой — подпись его текстом без пути
-// («- MJ-3:2 `/путь`» → «MJ-3:2»), без текста — имя файла; в абзаце несколько картинок — имена файлов
+// grid items from the question text: a list item (or paragraph) with one image is labelled by its text without the path
+// ("- MJ-3:2 `/path`" -> "MJ-3:2"), without text by the file name; a paragraph with several images uses file names
 export function galleryItems(legend) {
   const items = [], hide = [];
   for (const block of legend.querySelectorAll("li, p")) {
@@ -133,7 +159,7 @@ export function galleryItems(legend) {
     paths.forEach((p) => items.push({ path: p, label: paths.length === 1 && text ? text : stem(p) }));
     if (block.tagName === "LI" || !text) hide.push(block);
   }
-  const seen = new Map();   // одинаковые подписи — с номером, иначе в ответе не различить
+  const seen = new Map();   // identical labels get a number, otherwise they cannot be told apart in the answer
   for (const it of items) {
     const n = (seen.get(it.label) || 0) + 1;
     seen.set(it.label, n);
@@ -144,7 +170,7 @@ export function galleryItems(legend) {
 
 function gallery(fs) {
   const legend = fs.querySelector(":scope > legend"), box = fs.querySelector("input[type=checkbox]");
-  if (!legend || !box) return false;   // только вопрос с несколькими ответами
+  if (!legend || !box) return false;   // only a question with several answers
   const { items, hide } = galleryItems(legend);
   if (items.length < 2) return false;
   fs.dataset[DONE] = "1";
@@ -157,18 +183,18 @@ function gallery(fs) {
     const tile = document.createElement("label"), mark = document.createElement("input"), cap = document.createElement("span");
     tile.className = "chi-tile";
     mark.type = "checkbox";
-    mark.name = box.name;   // карточка хаба собирает ответ из отмеченных input[name=qN] — подпись и уходит
+    mark.name = box.name;   // the hub card builds the answer from the ticked input[name=qN]: the label is what goes out
     mark.value = label;
     cap.className = "chi-cap";
     cap.textContent = label;
     const zoom = document.createElement("button");
     zoom.type = "button";
     zoom.className = "chi-zoom";
-    zoom.title = "Открыть крупно";
-    zoom.setAttribute("aria-label", `${label} — открыть крупно`);
+    zoom.title = t("open");
+    zoom.setAttribute("aria-label", t("openLabeled", { label }));
     zoom.innerHTML = LOUPE;
     const img = image(path, () => tile.classList.add("chi-broken"));
-    img.title = `${label} — отметить`;
+    img.title = t("mark", { label });
     zoom.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); open(img); });
     tile.append(img, mark, cap, zoom);
     return tile;
@@ -178,13 +204,13 @@ function gallery(fs) {
   const all = document.createElement("button"), none = document.createElement("button");
   all.type = none.type = "button";
   all.className = none.className = "btn chi-all";
-  all.textContent = "Отметить все";
-  none.textContent = "Снять";
+  all.textContent = t("all");
+  none.textContent = t("none");
   all.addEventListener("click", () => set(true));
   none.addEventListener("click", () => set(false));
   const update = () => {
     const n = marks.filter((m) => m.checked).length;
-    count.textContent = `Отмечено ${n} из ${marks.length}`;
+    count.textContent = t("count", { n, m: marks.length });
     none.hidden = !n;
     all.hidden = n === marks.length;
   };
@@ -196,7 +222,7 @@ function gallery(fs) {
   return true;
 }
 
-// картинка в тексте вопроса, не сеткой (одна, или вопрос с одним ответом) — миниатюрой под текстом, путь не нужен
+// an image in the question text, not as a grid (a single one, or a single-answer question), is a thumbnail below the text, the path is not needed
 function inQuestion(fs) {
   const legend = fs.querySelector(":scope > legend");
   if (!legend || legend.dataset[DONE]) return;
@@ -218,7 +244,7 @@ export function scan(root) {
   for (const opt of root.querySelectorAll?.(".ask-card label.opt") || []) {
     if (opt.dataset[DONE]) continue;
     const paths = pathsOf(opt);
-    if (!paths.length) continue;   // путь ещё не размечен — придёт следующей мутацией
+    if (!paths.length) continue;   // the path is not marked up yet: it will come with the next mutation
     opt.dataset[DONE] = "1";
     const box = document.createElement("span");
     box.className = "chi-pics";
@@ -229,7 +255,7 @@ export function scan(root) {
   }
 }
 
-// крупно — сама картинка, не превью; окну хаба — список адресов всех картинок вопроса
+// large view shows the image itself, not the preview; the hub window gets a list of addresses of all the question's images
 function open(img) {
   const all = [...(img.closest("fieldset") || img.closest(".ask-card")).querySelectorAll(":is(.chi-pics, .chi-gal) .chi-img")];
   const list = all.map((c) => { const ask = c.closest("[data-ask]")?.dataset.ask || "", u = full.get(ask + "\n" + c.dataset.chi) || src(c.dataset.chi, false, ask); return { src: u, currentSrc: u, alt: c.dataset.chi.split("/").pop() }; });
@@ -237,7 +263,7 @@ function open(img) {
   popup(list[all.indexOf(img)]);
 }
 
-// своё окно — если окна хаба нет: крупно, клик по картинке — в натуральную величину, мимо или Esc — закрыть
+// our own window if there is no hub window: large view, a click on the image toggles natural size, a click outside or Esc closes
 function popup(img) {   // img — {src, alt}
   const box = document.createElement("div"), big = document.createElement("img");
   box.className = "chi-popup";
@@ -255,7 +281,7 @@ function popup(img) {   // img — {src, alt}
 export default function register(h) {
   hub = h;
   hub.addStyle("style.css");
-  // окно хаба — тот же модуль, что у страницы (один адрес — один экземпляр); заранее, чтобы клик открывал сразу
+  // the hub window is the same module as the page's (one address, one instance); loaded ahead so a click opens at once
   import("/static/js/lightbox.js").then((m) => { core = m; }, () => {});
   new MutationObserver((list) => {
     for (const m of list) {

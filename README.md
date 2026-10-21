@@ -1,42 +1,48 @@
-# Картинки в вариантах — плагин Agents Hub
+# Choice images — an Agents Hub plugin
 
-Когда сессия просит выбрать картинку, картинки видны прямо в вариантах ответа:
+When a session asks you to pick an image, the images show right in the answer options:
 
-- в описании варианта — путь к картинке (`/полный/путь/картинка.png`, png, jpg, webp, gif);
-- варианты с картинками встают по 4 в ряд (на телефоне по 2), вариант без картинки («ничего не подошло») — на всю ширину;
-- путь, по которому показана картинка, в подписи скрыт;
-- клик по картинке открывает её крупно и не выбирает вариант. Картинки всех вариантов вопроса листаются стрелками. Если стоит
-  плагин «Картинки в чате», работает его зум в точку клика и перетаскивание; без него — штатный: клик по картинке
-  показывает её в натуральную величину.
+- an option's description holds the path to an image (`/full/path/picture.png`; png, jpg, webp, gif);
+- options with images go 4 in a row (2 on a phone); an option without an image ("none fits") takes the full width;
+- the path the image is shown for is hidden in the label;
+- a click on an image opens it large and does not select the option. The images of all the question's options can be
+  paged with the arrows. If the "Chat images" plugin is installed, its zoom to the click point and dragging work;
+  without it the stock behaviour applies: a click on the image shows it at natural size.
 
-Путь к картинке в самом тексте вопроса («Что не так с этой иконкой? `/путь/иконка.png`») — миниатюра под текстом, путь
-скрыт; клик — крупно.
+A path to an image in the question text itself ("What is wrong with this icon? `/path/icon.png`") becomes a thumbnail
+below the text, the path is hidden; a click opens it large.
 
-## Много картинок — сетка с галочками
+## Many images — a grid with checkboxes
 
-У формы вопроса не больше 4 вариантов. Чтобы выбрать из любого числа картинок (хоть 50) одну, несколько или все, сессия
-задаёт вопрос с несколькими ответами (`multiSelect: true`), а картинки перечисляет списком в тексте вопроса — пункт на
-картинку, подпись и путь:
+The question form has at most 4 options. To pick one, several or all of any number of images (even 50), the session asks
+a question with several answers (`multiSelect: true`) and lists the images in the question text — one item per image,
+a label and a path:
 
 ```
-Какие апскейлить?
+Which ones to upscale?
 
-- MJ-1:1 `/полный/путь/MJ-1-grid-1.png`
-- MJ-1:2 `/полный/путь/MJ-1-grid-2.png`
+- MJ-1:1 `/full/path/MJ-1-grid-1.png`
+- MJ-1:2 `/full/path/MJ-1-grid-2.png`
 ```
 
-Плагин показывает их сеткой по 4 в ряд (на телефоне по 2): касание отмечает картинку, лупа в углу открывает крупно (все
-картинки листаются), сверху «Отмечено N из M», «Отметить все», «Снять». В ответ сессии уходят подписи отмеченных через
-запятую: `MJ-1:2, MJ-3:4`. Пункт без подписи — имя файла. Варианты вопроса (2–4, например «Ни одна») остаются под сеткой
-и уходят вместе с отмеченными. Без плагина — тот же вопрос текстом, ответ — своим текстом.
+The plugin shows them as a grid, 4 in a row (2 on a phone): a tap ticks an image, the magnifier in the corner opens it
+large (all the images can be paged), and at the top there are "Selected N of M", "Select all" and "Clear". The labels of
+the ticked images go to the session as the answer, comma-separated: `MJ-1:2, MJ-3:4`. An item without a label uses the
+file name. The question's options (2–4, for example "None") stay under the grid and go along with the ticked images.
+Without the plugin it is the same question as text, answered in your own words.
 
-Сети и процесса у плагина нет.
+The plugin has no network and no process.
 
-## Поставить
+The interface text is English by default and Russian when the hub language is Russian (`hub.lang`); any other language
+falls back to English.
 
-«Настройки» → «Плагины» → вставить ссылку на этот репозиторий → «Проверить и поставить». Нужен хаб с API плагинов 1.10.
+## Install
 
-## Тесты
+"Settings" → "Plugins" → paste the link to this repository → "Check and install". Needs a hub with plugin API 1.10.
 
-`python3 -m unittest discover -s tests` — стандартная библиотека, без хаба и браузера.
-Иконка — [3D Fluency](https://icons8.com/icons/3d-fluency) от Icons8.
+## Tests
+
+`python3 -m unittest discover -s tests` — standard library, no hub and no browser (`node` is used for the string test
+when present).
+
+Icon — [3D Fluency](https://icons8.com/icons/3d-fluency) by Icons8.

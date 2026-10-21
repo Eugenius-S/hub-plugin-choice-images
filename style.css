@@ -1,4 +1,4 @@
-/* Картинки в вариантах ответа */
+/* Images in answer options */
 .ask-card .opt.chi .chi-pics { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .ask-card .opt.chi .chi-pics .chi-img {
   display: block; width: 100%; max-width: 320px; aspect-ratio: 1; object-fit: contain;
@@ -7,21 +7,21 @@
 }
 .ask-card .opt.chi .chi-pics .chi-img:hover { transform: scale(1.02); }
 .ask-card .opt.chi .chi-pics:has(.chi-img + .chi-img) .chi-img { width: calc(50% - 4px); }
-/* картинка в тексте вопроса — миниатюрой под ним */
+/* an image in the question text is a thumbnail below it */
 .ask-card legend.chi .chi-q { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .ask-card legend.chi .chi-q .chi-img { display: block; width: 100%; max-width: 240px; aspect-ratio: 1; object-fit: contain;
   border-radius: 10px; background: var(--surface-2, #f4f4f5); cursor: zoom-in; }
-/* путь к картинке, которая показана, в подписи не нужен */
+/* the path of an image that is shown is not needed in the label */
 .ask-card legend.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
 .ask-card legend.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])),
 .ask-card .opt.chi :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i]),
 .ask-card .opt.chi code:has(> :is([data-path$=".png" i], [data-path$=".jpg" i], [data-path$=".jpeg" i], [data-path$=".webp" i], [data-path$=".gif" i])) { display: none; }
-/* варианты с картинками — по 4 в ряд, как сетка Midjourney; без картинки («ничего не подходит») — на всю ширину */
+/* options with images go 4 in a row, like a Midjourney grid; one without an image ("none fits") takes the full width */
 .ask-card fieldset.chi-set { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 @media (max-width: 560px) { .ask-card fieldset.chi-set { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ask-card fieldset.chi-set > :not(.opt.chi) { grid-column: 1 / -1; }
 .ask-card fieldset.chi-set > .opt.chi { margin: 0; }
-/* сетка с галочками: картинки из текста вопроса, отметить сколько угодно */
+/* grid with checkboxes: images from the question text, tick any number */
 .ask-card .chi-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 4px 0;
   font-size: 13px; color: var(--muted-foreground, #71717a); background: var(--card, #fff); }
 .ask-card .chi-bar .chi-all { padding: 2px 10px; font-size: 13px; }
@@ -43,7 +43,7 @@
   opacity: 0; transition: opacity 120ms ease; }
 .ask-card .chi-tile:hover .chi-zoom, .ask-card .chi-zoom:focus-visible { opacity: 1; }
 @media (hover: none) { .ask-card .chi-zoom { opacity: 1; } }
-/* своё окно, когда окна хаба нет */
+/* our own window, when there is no hub window */
 .chi-popup { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: auto;
   background: rgb(0 0 0 / 0.8); }
 .chi-popup img { max-width: 92vw; max-height: 92vh; object-fit: contain; cursor: zoom-in; }
