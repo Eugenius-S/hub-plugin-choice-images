@@ -117,7 +117,7 @@ class Strings(unittest.TestCase):
         self.assertEqual(self.run_t("none", "all"), "Select all")     # no language: English
         self.assertEqual(self.run_t("de", "none"), "Clear")           # unknown language: English
         self.assertEqual(self.run_t("en", "count", '{"n": 2, "m": 5}'), "Selected 2 of 5")
-        self.assertEqual(self.run_t("en", "mark", '{"label": "MJ-1:2"}'), "MJ-1:2 — select")
+        self.assertEqual(self.run_t("en", "mark", '{"label": "MJ-1:2"}'), "Select: MJ-1:2")
 
     @unittest.skipUnless(shutil.which("node"), "node is required")
     def test_russian_works(self):
@@ -126,8 +126,8 @@ class Strings(unittest.TestCase):
         self.assertEqual(self.run_t("ru", "none"), "\u0421\u043d\u044f\u0442\u044c")
         self.assertEqual(self.run_t("ru", "count", '{"n": 2, "m": 5}'), "\u041e\u0442\u043c\u0435\u0447\u0435\u043d\u043e 2 \u0438\u0437 5")
         self.assertEqual(self.run_t("ru", "open"), "\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043a\u0440\u0443\u043f\u043d\u043e")
-        self.assertEqual(self.run_t("ru", "openNamed", '{"name": "a.png"}'), "a.png — \u043e\u0442\u043a\u0440\u044b\u0442\u044c \u043a\u0440\u0443\u043f\u043d\u043e")
-        self.assertEqual(self.run_t("ru", "mark", '{"label": "MJ-1:2"}'), "MJ-1:2 — \u043e\u0442\u043c\u0435\u0442\u0438\u0442\u044c")
+        self.assertEqual(self.run_t("ru", "openNamed", '{"name": "a.png"}'), "\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043a\u0440\u0443\u043f\u043d\u043e: a.png")
+        self.assertEqual(self.run_t("ru", "mark", '{"label": "MJ-1:2"}'), "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c: MJ-1:2")
 
     def test_tables_have_the_same_keys_and_language_is_read_at_use_time(self):
         js = read("main.js")

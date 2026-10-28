@@ -1,15 +1,15 @@
 {
   "name": "choice-images",
   "icon": "icon.png",
-  "description": "When a question asks to pick an image, it shows right in the answer option; many images come as a grid with checkboxes, tick as many as you like. A click opens it large, with zoom",
-  "why": "Choosing between images by eye, without opening files by links",
+  "description": "Choose between pictures by eye: when a question asks to pick one, the pictures show right in the answer options. Many come as a grid with checkboxes, tick as many as you like. A click opens a picture large, with zoom.",
+  "why": "No need to open files by links to see what you are choosing",
   "i18n": {
     "ru": {
-      "description": "Если в вопросе нужно выбрать картинку, она видна прямо в варианте ответа; много картинок — сеткой с галочками, отметить сколько угодно. Клик открывает крупно, с зумом",
-      "why": "Выбор между картинками — глазами, без открытия файлов по ссылкам"
+      "description": "Выбирайте между картинками глазами: если в вопросе нужно выбрать картинку, она видна прямо в варианте ответа. Много картинок идут сеткой с галочками, отмечайте сколько угодно. Клик открывает картинку крупно, с зумом.",
+      "why": "Не нужно открывать файлы по ссылкам, чтобы увидеть, что выбираете"
     }
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "hub": "^1.10",
   "web": "main.js"
 }
