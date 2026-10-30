@@ -49,3 +49,7 @@
 .chi-popup img { max-width: 92vw; max-height: 92vh; object-fit: contain; cursor: zoom-in; }
 .chi-popup.zoom { place-items: start; }
 .chi-popup.zoom img { max-width: none; max-height: none; cursor: zoom-out; }
+
+/* Clean (html.th-clean): the checked tile and the checkbox use the ink of the theme, not the blue accent */
+html.th-clean .ask-card .chi-tile input { accent-color: var(--c-t1); }
+html.th-clean .ask-card .chi-tile:has(input:checked) { outline-color: var(--c-t1); }
