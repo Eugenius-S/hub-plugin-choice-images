@@ -7,7 +7,8 @@
 // images, tick any number of them; the labels of the ticked ones go into the answer. The Claude Code form has at most
 // 4 options, so the images go in the question text, not as options.
 const IMAGE = /\.(png|jpe?g|gif|webp)$/i;
-const PATH = /(\/[^\n`"'<>|]*?\.(?:png|jpe?g|gif|webp))(?![\w.])/gi;   // a path in the label text, also with spaces
+const ABSOLUTE = /^(?:[a-z]:[\\/]|\/)/i;
+const PATH = /((?:[a-z]:[\\/]|\/)[^\n`"'<>|]*?\.(?:png|jpe?g|gif|webp))(?![\w.])/gi;   // an absolute path, also with spaces
 const DONE = "chiDone";
 const LOUPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" '
   + 'stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg>';
@@ -40,12 +41,13 @@ const t = (k, v) => (((STR[hub?.lang] ?? STR.en)[k] ?? STR.en[k]) || k).replace(
 // images of an option: the core's link paths (data-path) or, if the core did not mark them up, the paths from the text
 export function pathsOf(opt) {
   const found = [];
-  for (const n of opt.querySelectorAll("[data-path]")) if (IMAGE.test(n.dataset.path) && n.dataset.path.startsWith("/")) found.push(n.dataset.path);
+  for (const n of opt.querySelectorAll("[data-path]")) if (IMAGE.test(n.dataset.path) && ABSOLUTE.test(n.dataset.path)) found.push(n.dataset.path);
   if (!found.length) for (const m of (opt.textContent || "").matchAll(PATH)) found.push(m[1].trim());
   return [...new Set(found)];
 }
 
-const stem = (p) => p.split("/").pop().replace(/\.[^.]+$/, "");
+const basename = (p) => p.split(/[\\/]/).pop();
+const stem = (p) => basename(p).replace(/\.[^.]+$/, "");
 
 // v is the question: a different address for a new card, otherwise the browser takes the image from the document's memory by the same address
 function src(path, raw, v = "") {
@@ -122,7 +124,7 @@ function image(path, failed) {
   c.width = c.height = 1;
   c.dataset.chi = path;   // not data-path: the core marks up links with it, and the style hides a shown path
   c.setAttribute("role", "img");
-  c.setAttribute("aria-label", path.split("/").pop());
+  c.setAttribute("aria-label", basename(path));
   c.addEventListener("chi-failed", () => failed(c));
   if (near) near.observe(c); else paint(c);
   return c;
@@ -134,7 +136,7 @@ function picture(path) {
     img.remove();
     if (box && !box.children.length) { box.remove(); opt?.classList.remove("chi"); }
   });
-  img.title = t("openNamed", { name: path.split("/").pop() });
+  img.title = t("openNamed", { name: basename(path) });
   img.addEventListener("click", (e) => {   // a click on the image opens it large, not an option choice (nor an answer for a one-tap card)
     e.preventDefault();
     e.stopPropagation();
@@ -258,7 +260,7 @@ export function scan(root) {
 // large view shows the image itself, not the preview; the hub window gets a list of addresses of all the question's images
 function open(img) {
   const all = [...(img.closest("fieldset") || img.closest(".ask-card")).querySelectorAll(":is(.chi-pics, .chi-gal) .chi-img")];
-  const list = all.map((c) => { const ask = c.closest("[data-ask]")?.dataset.ask || "", u = full.get(ask + "\n" + c.dataset.chi) || src(c.dataset.chi, false, ask); return { src: u, currentSrc: u, alt: c.dataset.chi.split("/").pop() }; });
+  const list = all.map((c) => { const ask = c.closest("[data-ask]")?.dataset.ask || "", u = full.get(ask + "\n" + c.dataset.chi) || src(c.dataset.chi, false, ask); return { src: u, currentSrc: u, alt: basename(c.dataset.chi) }; });
   if (core?.openLightbox) return core.openLightbox(list, all.indexOf(img));
   popup(list[all.indexOf(img)]);
 }
