@@ -58,6 +58,19 @@ class Source(unittest.TestCase):
         self.assertEqual(re.findall(pat.replace("\\/", "/"), text, re.I),
                          ["/home/me/Work/My Project/Styles/MJ/error-MJ-2-grid-1.png"])
 
+    @unittest.skipUnless(shutil.which("node"), "node is required")
+    def test_windows_paths_keep_the_drive_and_both_separator_styles(self):
+        script = """
+import assert from "node:assert/strict";
+import { pathToFileURL } from "node:url";
+const { pathsOf } = await import(pathToFileURL(process.argv[1]));
+for (const path of ["D:/Hub/My Project/a.png", "D:\\\\Hub\\\\My Project\\\\a.png"]) {
+  assert.deepEqual(pathsOf({ querySelectorAll: () => [{ dataset: { path } }] }), [path]);
+  assert.deepEqual(pathsOf({ querySelectorAll: () => [], textContent: "Option " + path }), [path]);
+}
+"""
+        subprocess.run(["node", "--input-type=module", "-e", script, os.path.join(ROOT, "main.js")], check=True)
+
     def test_gallery(self):
         # "even 50 images, pick even 1, even all": the Claude Code form has at most 4 options, so the images
         # are listed in the text of a multi-answer question; the ticked ones go as the answer via the card's input[name=qN]
